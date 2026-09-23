@@ -12,7 +12,7 @@ that this repo ignores.
 | `scheduler` | carbon-scheduler | ported, 247/247 |
 | `io` | carbon-io | ported, 937/937 |
 | `math` | carbon-math | ported, 90/90 |
-| `blueexposure` | carbon-blueexposure | in progress |
+| `blueexposure` | carbon-blueexposure | ported, 1184/1184 |
 | `linux-overlay-ports/` | vcpkg overlay ports for the forks (and greenlet over HTTPS) | |
 | `linux-tools/` | `setup_component.sh`, `add_linux_presets.py`, container preset template | |
 

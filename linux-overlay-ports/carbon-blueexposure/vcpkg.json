@@ -1,0 +1,27 @@
+{
+  "name": "carbon-blueexposure",
+  "version": "2.2.0",
+  "description": "Carbon blue exposure static library",
+  "dependencies": [
+    {
+      "name": "carbon-core",
+      "version>=": "2.4.0"
+    },
+    {
+      "name": "python3",
+      "version>=": "3.12.9#1"
+    },
+    {
+      "name": "vcpkg-cmake",
+      "host": true,
+      "version>=": "2024-04-23"
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true,
+      "version>=": "2024-05-23"
+    }
+  ],
+  "supports": "(windows & x64) | osx | linux",
+  "port-version": 1
+}

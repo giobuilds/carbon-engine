@@ -18,3 +18,7 @@
 	path = math
 	url = git@github.com:giobuilds/math.git
 	branch = linux-port
+[submodule "blueexposure"]
+	path = blueexposure
+	url = git@github.com:giobuilds/blueexposure.git
+	branch = linux-port

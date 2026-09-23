@@ -86,7 +86,8 @@ podman run --rm --userns=keep-id --security-opt label=disable -e HOME=/home/keep
 ```
 
 - Run core's `ctest` serially. The telemetry tests bind a Tracy port and fail under `-j`.
-- `scheduler` (247/247) and `io` (936/937, one skipped by design) are also ported. Ported components live on
+- `scheduler` (247/247), `io` (936/937, one skipped by design), `math` (90/90) and `blueexposure` (154/154)
+  are also ported. Ported components live on
   a `linux-port` branch in each repo; overlay ports must be added for each so the next layer can consume it.
 - **Overlay ports** in `linux-overlay-ports/` (workspace root, not a git repo) replace registry ports that
   exclude Linux or fetch over SSH: `carbon-core` builds from the local core commit named in its portfile
@@ -94,7 +95,10 @@ podman run --rm --userns=keep-id --security-opt label=disable -e HOME=/home/keep
   branches. Container presets pass the directory as `VCPKG_OVERLAY_PORTS`.
 - The vendored `vcpkg-registry` submodules point at the local `vcpkg-registry` clone's `linux-port` branch,
   which fixes an upstream bug: the Linux `*-triplet.cmake` files include the carbon toolchain by bare name.
-- `linux-tools/add_linux_presets.py <CMakePresets.json>` injects the Linux presets into a component.
+- `linux-tools/setup_component.sh <dir>` does the whole component setup (branch, submodules, baseline, presets,
+  container user preset); `fix_include_casing.py` fixes `CCPLog.h`-style include casing against core's headers.
+- LP64 gotcha: on Linux `long` is `int64_t` and `unsigned long`/`size_t` are `uint64_t`. Code that adds extra
+  `long`/`size_t` overloads for macOS (`#else` after `#ifdef _MSC_VER`) must become `#elif defined(__APPLE__)`.
 - Expect include-casing errors (`CCPLog.h` vs `CcpLog.h`) in components not yet touched by upstream's
   "case-sensitive systems" PRs; match core's on-disk names.
 
