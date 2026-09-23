@@ -1,0 +1,5 @@
+# Superproject for the Linux port of Carbon. Only the ported components are
+# submodules; every other carbonengine clone in this directory is ignored.
+/*/
+!/linux-overlay-ports/
+!/linux-tools/

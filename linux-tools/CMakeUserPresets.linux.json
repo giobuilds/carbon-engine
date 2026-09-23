@@ -1,0 +1,14 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 31, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "x64-linux-debug-container",
+      "inherits": "x64-linux-debug",
+      "description": "x64-linux-debug with the workspace overlay ports (run inside the linux-containers GCC image)",
+      "cacheVariables": {
+        "VCPKG_OVERLAY_PORTS": "${sourceDir}/../linux-overlay-ports"
+      }
+    }
+  ]
+}

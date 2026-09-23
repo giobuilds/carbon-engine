@@ -1,0 +1,28 @@
+vcpkg_from_git(
+  OUT_SOURCE_PATH SOURCE_PATH
+  URL https://github.com/giobuilds/scheduler.git
+  REF 674bc096695f45329b6ec78b42e22e33e2ebd1cb
+  HEAD_REF linux-port
+)
+
+vcpkg_cmake_configure(
+  SOURCE_PATH ${SOURCE_PATH}
+  OPTIONS
+    -DBUILD_TESTING=OFF
+    -DBUILD_DOCUMENTATION=OFF
+    -DCMAKE_BUILD_TYPE=${CARBON_BUILD_TYPE}
+)
+
+vcpkg_cmake_install()
+
+vcpkg_cmake_config_fixup()
+set(BUILD_PATHS
+  "${CURRENT_PACKAGES_DIR}/bin/*.dll"
+  "${CURRENT_PACKAGES_DIR}/debug/bin/*.dll"
+  "${CURRENT_PACKAGES_DIR}/bin/*.pyd"
+  "${CURRENT_PACKAGES_DIR}/debug/bin/*.pyd"
+)
+vcpkg_copy_pdbs(
+  BUILD_PATHS ${BUILD_PATHS}
+)
+ccp_externalize_apple_debuginfo()

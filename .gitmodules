@@ -1,0 +1,20 @@
+[submodule "vcpkg-registry"]
+	path = vcpkg-registry
+	url = git@github.com:giobuilds/vcpkg-registry.git
+	branch = linux-port
+[submodule "core"]
+	path = core
+	url = git@github.com:giobuilds/core.git
+	branch = linux-port
+[submodule "scheduler"]
+	path = scheduler
+	url = git@github.com:giobuilds/scheduler.git
+	branch = linux-port
+[submodule "io"]
+	path = io
+	url = git@github.com:giobuilds/io.git
+	branch = linux-port
+[submodule "math"]
+	path = math
+	url = git@github.com:giobuilds/math.git
+	branch = linux-port
