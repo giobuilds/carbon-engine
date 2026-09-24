@@ -16,21 +16,23 @@ that this repo ignores.
 | `exefile` | carbon-exefile (Python host executable) | ported, builds (no tests); Crashpad off |
 | `pdm` | carbon-pdm (platform detection) | ported, 4/4 |
 | `pdm-proto-wrapper` | carbon-pdmprotowrapper | ported, 4/4 |
-| `blue` | carbon-blue (engine kernel) | ported, 389/389 natively (6 sysinfo/locale tests need a real home directory, fonts and `fr_FR`, so fail in the container) |
+| `blue` | carbon-blue (engine kernel) | ported, 389/389 |
 | `linux-overlay-ports/` | vcpkg overlay ports for the forks, greenlet over HTTPS, and openssl 1.1.1k with `openssl.pc` (curl needs it on Linux) | |
-| `linux-tools/` | `setup_component.sh`, `add_linux_presets.py`, container preset template | |
+| `linux-tools/` | `incontainer.sh` (run anything in the build container), `Containerfile.plus` (build image), `setup_component.sh`, `add_linux_presets.py`, container preset template | |
 
 ## Building
 
-Build inside the container from `carbonengine/linux-containers` (gcc image) plus `libtool`;
-see `CLAUDE.md` for the exact `podman run` line and the Fedora host caveats. Inside a
-component:
+Build inside the container: upstream's `carbonengine/linux-containers` gcc image tagged
+`carbon-linux-gcc-buildenv:local`, extended by `linux-tools/Containerfile.plus` into `:local-plus`.
+`linux-tools/incontainer.sh` runs a command in it with the right mounts and a desktop-like environment:
 
 ```
-cp ../linux-tools/CMakeUserPresets.linux.json CMakeUserPresets.json
-cmake --preset x64-linux-debug-container
-cmake --build .cmake-build-x64-linux-debug-container -j16
-(cd .cmake-build-x64-linux-debug-container && ctest -C Debug)
+podman build -t carbon-linux-gcc-buildenv:local linux-containers/build/gcc
+podman build -t carbon-linux-gcc-buildenv:local-plus -f linux-tools/Containerfile.plus linux-tools
+cp linux-tools/CMakeUserPresets.linux.json <component>/CMakeUserPresets.json
+linux-tools/incontainer.sh <component> \
+  'cmake --preset x64-linux-debug-container && cmake --build .cmake-build-x64-linux-debug-container -j16'
+linux-tools/incontainer.sh <component>/.cmake-build-x64-linux-debug-container 'ctest -j8 --output-on-failure'
 ```
 
 The user preset adds `VCPKG_OVERLAY_PORTS=${sourceDir}/../linux-overlay-ports`, which is how

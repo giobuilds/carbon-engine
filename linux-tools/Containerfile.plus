@@ -1,0 +1,22 @@
+# Workspace build image: upstream's linux-containers GCC image plus what the Carbon ports need on top.
+#
+#   podman build -t carbon-linux-gcc-buildenv:local ../linux-containers/build/gcc
+#   podman build -t carbon-linux-gcc-buildenv:local-plus -f Containerfile.plus .
+#
+# - libtool/m4/gperf/bison/flex/texinfo/gettext/python3: autotools-based vcpkg ports (libffi, python3, ...)
+# - locales: blue's YAML tests switch to fr_FR to prove parsing ignores the user's locale
+# - fonts-dejavu-core: gives /usr/share/fonts, which blue.sysinfo reports as the shared fonts directory
+# - gdb: backtraces for crashes inside tests
+FROM carbon-linux-gcc-buildenv:local
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install --no-install-recommends -yq \
+    libtool libtool-bin m4 gperf bison flex texinfo gettext python3 \
+    locales fonts-dejavu-core gdb \
+    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+# Plain "fr_FR" is what the tests ask setlocale() for; glibc resolves it to the ISO-8859-1 definition.
+RUN localedef -i fr_FR -f ISO-8859-1 fr_FR \
+    && localedef -i fr_FR -f UTF-8 fr_FR.UTF-8 \
+    && localedef -i en_US -f UTF-8 en_US.UTF-8

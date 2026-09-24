@@ -74,23 +74,23 @@ natively on Fedora). The working pattern, which the other components should copy
 - `x64-linux-{debug,internal,release,trinitydev}` presets in `CMakePresets.json`, chainloading
   `vendor/github.com/carbonengine/vcpkg-registry/toolchains/x64-linux-carbon.cmake`.
 - The vcpkg-registry submodule and the `baseline` in `vcpkg-configuration.json` moved to `f0325d62` or later.
-- Build inside the Podman image (upstream `linux-containers` gcc image plus `libtool`, tagged
-  `carbon-linux-gcc-buildenv:local-plus`) because Fedora lacks `perl-IPC-Cmd` and `autoconf-archive`:
+- Build inside the Podman image `carbon-linux-gcc-buildenv:local-plus`: upstream's `linux-containers` gcc image
+  (tagged `:local`) plus `linux-tools/Containerfile.plus` (libtool and friends, which Fedora's native vcpkg path also
+  lacks, plus `fr_FR`/`en_US` locales, fonts and gdb for blue's tests). Always run it through
+  `linux-tools/incontainer.sh <dir> '<command>'`, which adds keep-id, `label=disable`, a writable tmpfs `$HOME`,
+  the host's `/etc/machine-id` and the workspace/vcpkg-cache mounts at their host paths:
 
 ```
-podman run --rm --userns=keep-id --security-opt label=disable -e HOME=/home/keeper \
-  -v /home/keeper/Workspace/CARBON_Engine:/home/keeper/Workspace/CARBON_Engine \
-  -v /home/keeper/.cache/vcpkg:/home/keeper/.cache/vcpkg \
-  -w /home/keeper/Workspace/CARBON_Engine/<component> carbon-linux-gcc-buildenv:local-plus \
-  bash -c 'cmake --preset x64-linux-debug-container && cmake --build .cmake-build-x64-linux-debug-container -j16'
+linux-tools/incontainer.sh <component> \
+  'cmake --preset x64-linux-debug-container && cmake --build .cmake-build-x64-linux-debug-container -j16'
+linux-tools/incontainer.sh <component>/.cmake-build-x64-linux-debug-container 'ctest -j8 --output-on-failure'
 ```
 
 - Run core's `ctest` serially. The telemetry tests bind a Tracy port and fail under `-j`.
 - `scheduler` (247/247), `io` (936/937, one skipped by design), `math` (90/90), `blueexposure` (154/154),
-  `exefile` (builds; no tests), `pdm` (4/4), `pdm-proto-wrapper` (4/4) and `blue` (389/389 natively) are also
-  ported. Blue's Python tests run through exefile; six sysinfo/locale tests fail only inside the container
-  (root-owned `$HOME`, empty machine-id, no fonts, no `fr_FR` locale), so run blue's `ctest` on the host after
-  building in the container. Ported components live on
+  `exefile` (builds; no tests), `pdm` (4/4), `pdm-proto-wrapper` (4/4) and `blue` (389/389) are also
+  ported. Blue's Python tests run through exefile and need the environment `incontainer.sh` provides (writable
+  `$HOME`, machine-id, fonts, `fr_FR` locale). Ported components live on
   a `linux-port` branch in each repo; overlay ports must be added for each so the next layer can consume it.
 - **Overlay ports** in `linux-overlay-ports/` (workspace root, not a git repo) replace registry ports that
   exclude Linux or fetch over SSH: `carbon-core` builds from the local core commit named in its portfile
