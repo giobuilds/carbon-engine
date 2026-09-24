@@ -88,8 +88,8 @@ linux-tools/incontainer.sh <component>/.cmake-build-x64-linux-debug-container 'c
 
 - Run core's `ctest` serially. The telemetry tests bind a Tracy port and fail under `-j`.
 - `scheduler` (247/247), `io` (936/937, one skipped by design), `math` (90/90), `blueexposure` (154/154),
-  `exefile` (builds; no tests), `pdm` (4/4), `pdm-proto-wrapper` (4/4) and `blue` (389/389) are also
-  ported. Blue's Python tests run through exefile and need the environment `incontainer.sh` provides (writable
+  `exefile` (builds; no tests), `pdm` (4/4), `pdm-proto-wrapper` (4/4), `blue` (389/389) and `destiny` (73/73 C++, 458/458
+  Python) are also ported. Blue's Python tests run through exefile and need the environment `incontainer.sh` provides (writable
   `$HOME`, machine-id, fonts, `fr_FR` locale). Ported components live on
   a `linux-port` branch in each repo; overlay ports must be added for each so the next layer can consume it.
 - **Overlay ports** in `linux-overlay-ports/` (workspace root, not a git repo) replace registry ports that
@@ -103,6 +103,11 @@ linux-tools/incontainer.sh <component>/.cmake-build-x64-linux-debug-container 'c
   container user preset); `fix_include_casing.py` fixes `CCPLog.h`-style include casing against core's headers.
 - LP64 gotcha: on Linux `long` is `int64_t` and `unsigned long`/`size_t` are `uint64_t`. Code that adds extra
   `long`/`size_t` overloads for macOS (`#else` after `#ifdef _MSC_VER`) must become `#elif defined(__APPLE__)`.
+- DirectXMath's portable `sal.h` (pulled in by carbon-math) defines Microsoft's legacy lowercase SAL macros
+  (`__valid`, `__success`, ...) that libstdc++ uses as identifiers; carbon-math's `Requirements.h` `#undef`s them
+  via `SalLegacyUndef.h` under libstdc++. Symptom: errors deep in `bits/parse_numbers.h` or other std headers.
+- `carbon-exefile-interpreter` (how destiny and later components run Python tests through exefile) has an overlay
+  port adding the Linux branch and the lower-case flavor postfix (`exefile_debug`).
 - Expect include-casing errors (`CCPLog.h` vs `CcpLog.h`) in components not yet touched by upstream's
   "case-sensitive systems" PRs; match core's on-disk names.
 

@@ -38,3 +38,7 @@
 	path = blue
 	url = git@github.com:giobuilds/blue.git
 	branch = linux-port
+[submodule "destiny"]
+	path = destiny
+	url = git@github.com:giobuilds/destiny.git
+	branch = linux-port

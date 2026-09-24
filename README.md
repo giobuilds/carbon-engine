@@ -17,6 +17,7 @@ that this repo ignores.
 | `pdm` | carbon-pdm (platform detection) | ported, 4/4 |
 | `pdm-proto-wrapper` | carbon-pdmprotowrapper | ported, 4/4 |
 | `blue` | carbon-blue (engine kernel) | ported, 389/389 |
+| `destiny` | carbon-destiny (space physics) | ported, 73/73 C++ + 458/458 Python |
 | `linux-overlay-ports/` | vcpkg overlay ports for the forks, greenlet over HTTPS, and openssl 1.1.1k with `openssl.pc` (curl needs it on Linux) | |
 | `linux-tools/` | `incontainer.sh` (run anything in the build container), `Containerfile.plus` (build image), `setup_component.sh`, `add_linux_presets.py`, container preset template | |
 

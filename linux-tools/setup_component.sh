@@ -14,7 +14,7 @@ git submodule update --init --depth 1 vendor/github.com/microsoft/vcpkg >/dev/nu
 git submodule update --init vendor/github.com/carbonengine/vcpkg-registry >/dev/null 2>&1
 git -C vendor/github.com/carbonengine/vcpkg-registry fetch -q "$WS/vcpkg-registry" linux-port
 git -C vendor/github.com/carbonengine/vcpkg-registry checkout -q $REGISTRY_FIX
-sed -i 's#url = https://github.com/carbonengine/vcpkg-registry#url = https://github.com/giobuilds/vcpkg-registry#' .gitmodules
+sed -i -E 's#url = (https://github.com/|git@github.com:)carbonengine/vcpkg-registry(.git)?$#url = https://github.com/giobuilds/vcpkg-registry#' .gitmodules
 python3 - "$REGISTRY_BASELINE" <<'PY'
 import json,sys
 p='vcpkg-configuration.json'; d=json.load(open(p))

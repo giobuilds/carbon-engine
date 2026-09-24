@@ -1,14 +1,13 @@
 vcpkg_from_git(
   OUT_SOURCE_PATH SOURCE_PATH
-  URL https://github.com/giobuilds/math.git
-  REF 1fbd6c2743c754267da78b6452c98e5ce92a53c1
+  URL https://github.com/giobuilds/destiny.git
+  REF d829573dc072c7ec501850e6d700b25b84e56036
   HEAD_REF linux-port
 )
 
 vcpkg_cmake_configure(
   SOURCE_PATH ${SOURCE_PATH}
   OPTIONS
-  ${FEATURE_OPTIONS}
   -DBUILD_TESTING=OFF
   -DVCPKG_USE_HOST_TOOLS=ON
   -DVCPKG_HOST_TRIPLET=${HOST_TRIPLET}
@@ -18,5 +17,9 @@ vcpkg_cmake_configure(
 vcpkg_cmake_install()
 
 vcpkg_cmake_config_fixup()
-vcpkg_copy_pdbs()
+set(BUILD_PATHS
+        "${CURRENT_PACKAGES_DIR}/lib/*.pyd"
+        "${CURRENT_PACKAGES_DIR}/debug/lib/*.pyd"
+)
+vcpkg_copy_pdbs(BUILD_PATHS ${BUILD_PATHS})
 ccp_externalize_apple_debuginfo()

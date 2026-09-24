@@ -10,7 +10,7 @@ for d in sys.argv[1:sep]:
 fixed = 0
 for d in sys.argv[sep+1:]:
     for path in pathlib.Path(d).rglob('*'):
-        if path.suffix not in ('.h', '.cpp', '.mm', '.c', '.inl') or 'vendor' in path.parts or path.name.startswith('.cmake-build'): continue
+        if path.suffix not in ('.h', '.cpp', '.mm', '.c', '.inl') or 'vendor' in path.parts or any(p.startswith('.cmake-build') for p in path.parts): continue
         s = path.read_text(errors='replace')
         def sub(m):
             global fixed
