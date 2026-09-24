@@ -5,7 +5,7 @@
 set -euo pipefail
 comp=$1
 WS=/home/keeper/Workspace/CARBON_Engine
-REGISTRY_FIX=7268e6d65def7609bcd99f25d287b04a2a08f881
+REGISTRY_FIX=ce706aa83f835704640c827f2c139b86157202bf
 REGISTRY_BASELINE=f0325d62b39d94fcd91216ba8eb6786ce2c00364
 cd "$WS/$comp"
 git rev-parse --verify -q linux-port >/dev/null || git checkout -q -b linux-port
@@ -18,7 +18,7 @@ sed -i -E 's#url = (https://github.com/|git@github.com:)carbonengine/vcpkg-regis
 python3 - "$REGISTRY_BASELINE" <<'PY'
 import json,sys
 p='vcpkg-configuration.json'; d=json.load(open(p))
-for r in d['registries']:
+for r in d.get('registries', []):
     if 'carbonengine/vcpkg-registry' in r['repository']:
         r['baseline']=sys.argv[1]
         r['repository']='https://github.com/carbonengine/vcpkg-registry.git'  # SSH URLs cannot be fetched inside the build container

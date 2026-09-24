@@ -42,3 +42,19 @@
 	path = destiny
 	url = git@github.com:giobuilds/destiny.git
 	branch = linux-port
+[submodule "parser"]
+	path = parser
+	url = git@github.com:giobuilds/parser.git
+	branch = linux-port
+[submodule "imageio"]
+	path = imageio
+	url = git@github.com:giobuilds/imageio.git
+	branch = linux-port
+[submodule "mesh"]
+	path = mesh
+	url = git@github.com:giobuilds/mesh.git
+	branch = linux-port
+[submodule "trinity"]
+	path = trinity
+	url = git@github.com:giobuilds/trinity.git
+	branch = linux-port

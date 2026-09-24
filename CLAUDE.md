@@ -88,8 +88,10 @@ linux-tools/incontainer.sh <component>/.cmake-build-x64-linux-debug-container 'c
 
 - Run core's `ctest` serially. The telemetry tests bind a Tracy port and fail under `-j`.
 - `scheduler` (247/247), `io` (936/937, one skipped by design), `math` (90/90), `blueexposure` (154/154),
-  `exefile` (builds; no tests), `pdm` (4/4), `pdm-proto-wrapper` (4/4), `blue` (389/389) and `destiny` (73/73 C++, 458/458
-  Python) are also ported. Blue's Python tests run through exefile and need the environment `incontainer.sh` provides (writable
+  `exefile` (builds; no tests), `pdm` (4/4), `pdm-proto-wrapper` (4/4), `blue` (389/389), `destiny` (73/73 C++, 458/458
+  Python), `parser` (52/52), `imageio` (331/331), `mesh` (28/28) and `trinity` (stub backend; no test target,
+  `linux-tools/trinity_smoke.sh` is the end-to-end check) are also ported. `trinityaudioapi` is header-only and
+  needs only an HTTPS overlay port. Blue's Python tests run through exefile and need the environment `incontainer.sh` provides (writable
   `$HOME`, machine-id, fonts, `fr_FR` locale). Ported components live on
   a `linux-port` branch in each repo; overlay ports must be added for each so the next layer can consume it.
 - **Overlay ports** in `linux-overlay-ports/` (workspace root, not a git repo) replace registry ports that
@@ -108,6 +110,16 @@ linux-tools/incontainer.sh <component>/.cmake-build-x64-linux-debug-container 'c
   via `SalLegacyUndef.h` under libstdc++. Symptom: errors deep in `bits/parse_numbers.h` or other std headers.
 - `carbon-exefile-interpreter` (how destiny and later components run Python tests through exefile) has an overlay
   port adding the Linux branch and the lower-case flavor postfix (`exefile_debug`).
+- Trinity on Linux builds only the stub platform (`TrinityAL_stub`, `_trinity_stub<flavor>.so`) with a headless
+  `Tr2MainWindow_Linux.cpp`; there is no GPU backend or display-server (X11/Wayland) code yet. Importing it needs the
+  same PYTHONPATH layout as blue's tests plus `bin` and `bin/python` (scheduler), and `import blue_debug` before
+  `import blue` in debug builds (see `linux-tools/trinity_smoke.sh`).
+- The Linux toolchains in the registry fork mirror the macOS warning exclusions (`-Wno-reorder`, unused
+  variables/functions, unknown pragmas, missing braces) and silence GCC-only `-Wall` extras (sign-compare,
+  class-memaccess, cast-user-defined, unused-but-set-variable); trinity builds with warnings as errors.
+- This machine's btrfs `/home` has had all space allocated to data chunks; metadata then runs out ("No space left on
+  device" with 100+ GB free). Container presets pass `--clean-after-build` to vcpkg to keep file counts down; the
+  fix is `sudo btrfs balance start -dusage=20 /home`.
 - Expect include-casing errors (`CCPLog.h` vs `CcpLog.h`) in components not yet touched by upstream's
   "case-sensitive systems" PRs; match core's on-disk names.
 
