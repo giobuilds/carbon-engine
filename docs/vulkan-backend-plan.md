@@ -1,6 +1,6 @@
 # Vulkan backend for trinity on Linux: plan
 
-Status (2026-09-24): **phase 0 done** (`giobuilds/trinity` `linux-port` 13dacfaf). Trinity builds on Linux with the stub
+Status (2026-09-25): **phases 0 and 1 done** (`giobuilds/trinity` `linux-port` 5f7d53b6). Trinity builds on Linux with the stub
 backend and with a Vulkan skeleton (`BUILD_VULKAN=ON`); `linux-tools/trinity_smoke.sh [stub|vulkan]` checks both.
 
 ## Decisions
@@ -103,21 +103,32 @@ No platform chain ends in `#error`/`static_assert`. Items, grouped by the phase 
 - Note: `Tr2SSAO.cpp:202` keys a Metal workaround on `__APPLE__` rather than the backend (matters for MoltenVK only).
 - Python sees `platformName "vulkan"`, `platformID 14`; no script in these repos compares platform ids.
 
-### Phase 1: Shader toolchain
-- Build `shadercompiler` on Linux (CMake Linux branch, `shader-compiler` vcpkg feature for Linux with
-  directx-dxc, re2c, lemon; guard the `_WIN32`/`CComPtr` parts of `EffectCompilerDX11` and the include handler).
-- `PLATFORM_VULKAN` in `Platforms.h`; `EffectCompilerVulkan : EffectCompilerBase` reusing the DX11 AST passes
-  (`PatchCBuffers`, texture-function conversion, `MergeSamplers`, `CreateGlobalsCB`/`AssignRegisters` with spaces,
-  `OutputHLSL`), then DXC with `-spirv -fspv-target-env=vulkan1.3 -fvk-use-dx-layout -Zpc` and explicit binding
-  shifts (or `[[vk::binding]]` emitted by `OutputHLSL`).
-- Binding convention: descriptor set = register space; binding = per-type offset + register index. Constant
-  buffers become uniform buffers; static samplers become immutable samplers.
-- Reflection: a SPIRV-Reflect adapter beside `ReflectionDx11`/`FunctionDx12` in `DxReflection.h`, filling the same
-  `StageInput`/`RegisterInputDescription`, so `Tr2EffectDescription::Read` is unchanged.
-- `build.py`/`paths.py` learn the `vulkan` platform; output lands in `effect.vulkan/`.
-- Compile `trinityal/tests/Shaders.DX12/*` to SPIR-V through the test CMake loop.
+### Phase 1: Shader toolchain — done
+- `ShaderCompiler` builds and runs on Linux (vcpkg `shader-compiler` feature on `linux & x64`, `BUILD_SHADER_COMPILER=ON`
+  in trinity's container preset). Linux takes the Windows types from dxc's `WinAdapter.h` (the compiler's own macOS
+  stand-ins disagree on `BOOL`/`LONG`) and D3D types from DirectX-Headers, with rpc/ole stand-ins in
+  `shadercompiler/linux/` (DirectX-Headers' own `wsl/stubs` clash with WinAdapter).
+- `PLATFORM_VULKAN` = 14, short name `vulkan`, default platform on Linux; `build.py`/`paths.py` know it
+  (`res:/…/effect.vulkan/…/x.sm_hi`).
+- `EffectCompilerVulkan`: DX12 front end (spaces, globals cbuffer, semantic patching), SM 6.0 profiles; dxc in-process
+  compiles each stage to **SPIR-V** (stored) and to **DXIL** whose `ID3D12ShaderReflection` goes through the existing
+  `DxReflection::ProcessReflection` (new `ReflectionDx12` traits). Signatures therefore match DX12 exactly and
+  `Tr2EffectDescription::Read` is unchanged. `sampler_state` samplers become static samplers (immutable samplers in
+  the backend; they still occupy binding 32 + register).
+- The HLSL pass helpers moved verbatim from `EffectCompilerDX11.cpp` to `EffectCompilerHLSLShared.cpp` (verified
+  line by line; **not yet compiled on Windows**).
+- Tests: `VulkanCompilerTest` 5/5 (SPIR-V output, signature from reflection, `spirv-val` clean with SPIR-V
+  (set, binding) pairs equal to the signature's registers, location mismatch rejected, compute thread groups).
+  Root ctest: 244 tests, 101 pass, 143 skip (no adapter), 2 disabled.
 
-Done when: the test shaders and a sample `.fx` compile to `effect.vulkan/*.sm_hi` on Linux, and spirv-val passes.
+Follow-ups found in phase 1:
+- **Explicit stage-interface locations.** SPIR-V links stages by location; dxc numbers them per stage
+  (`-fvk-stage-io-order=alpha`). The compiler rejects passes whose consumer does not read a prefix of the producer's
+  sorted outputs. Proper fix: emit `[[vk::location(n)]]` from a per-pass semantic map in the HLSL output.
+- **Effect path casing.** `Tr2Effect::ConvertEffectPath` lowercases the whole path; build output keeps source casing.
+  Case-sensitive filesystems need lowercase output or a case-insensitive lookup in blue's res file system (phase 4).
+- Raytracing libraries are rejected (needs `VK_KHR_ray_tracing_pipeline`, "Later").
+- `/listing` (YAML listing) is not produced for Vulkan yet.
 
 ### Phase 2: Core backend (offscreen)
 - Instance/device (volk, debug utils, validation layers in Debug), VMA, one graphics+compute queue, per-frame

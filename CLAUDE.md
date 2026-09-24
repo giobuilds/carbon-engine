@@ -114,6 +114,8 @@ linux-tools/incontainer.sh <component>/.cmake-build-x64-linux-debug-container 'c
 - `carbon-exefile-interpreter` (how destiny and later components run Python tests through exefile) has an overlay
   port adding the Linux branch and the lower-case flavor postfix (`exefile_debug`).
 - The Vulkan backend plan (decisions, phases, done criteria) is `docs/vulkan-backend-plan.md`; update it as phases land.
+- Trinity's shader compiler builds on Linux (`BUILD_SHADER_COMPILER=ON`); `ShaderCompiler /define PLATFORM 14 in.fx out`
+  (absolute paths) compiles an effect to SPIR-V via `EffectCompilerVulkan`. Its tests need `spirv-tools` (in the image).
 - Trinity on Linux builds only the stub platform (`TrinityAL_stub`, `_trinity_stub<flavor>.so`) with a headless
   `Tr2MainWindow_Linux.cpp`; there is no GPU backend or display-server (X11/Wayland) code yet. Importing it needs the
   same PYTHONPATH layout as blue's tests plus `bin` and `bin/python` (scheduler), and `import blue_debug` before

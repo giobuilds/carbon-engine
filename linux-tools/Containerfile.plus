@@ -10,6 +10,7 @@
 # - gdb: backtraces for crashes inside tests
 # - libvulkan1, mesa-vulkan-drivers, vulkan-tools: the Vulkan loader and Mesa's drivers, including lavapipe
 #   (software Vulkan) so the Vulkan backend's tests run without a GPU; vulkaninfo for checking the setup
+# - spirv-tools: spirv-val/spirv-dis for the Vulkan shader compiler tests
 # - X11/Wayland/xkbcommon/EGL development headers: SDL3's x11 and wayland video drivers build against them
 FROM carbon-linux-gcc-buildenv:local
 
@@ -18,7 +19,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install --no-install-recommends -yq \
     libtool libtool-bin libltdl-dev m4 gperf bison flex texinfo gettext python3 \
     locales fonts-dejavu-core gdb \
-    libvulkan1 mesa-vulkan-drivers vulkan-tools \
+    libvulkan1 mesa-vulkan-drivers vulkan-tools spirv-tools \
     libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
     libxkbcommon-dev libwayland-dev wayland-protocols libegl-dev libdecor-0-dev \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
