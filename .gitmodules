@@ -22,3 +22,19 @@
 	path = blueexposure
 	url = git@github.com:giobuilds/blueexposure.git
 	branch = linux-port
+[submodule "exefile"]
+	path = exefile
+	url = git@github.com:giobuilds/exefile.git
+	branch = linux-port
+[submodule "pdm"]
+	path = pdm
+	url = git@github.com:giobuilds/pdm.git
+	branch = linux-port
+[submodule "pdm-proto-wrapper"]
+	path = pdm-proto-wrapper
+	url = git@github.com:giobuilds/pdm-proto-wrapper.git
+	branch = linux-port
+[submodule "blue"]
+	path = blue
+	url = git@github.com:giobuilds/blue.git
+	branch = linux-port

@@ -1,19 +1,13 @@
 vcpkg_from_git(
   OUT_SOURCE_PATH SOURCE_PATH
-  URL https://github.com/giobuilds/core.git
-  REF 69105470c037caf224731be7722c0b00fbae9c09
+  URL https://github.com/giobuilds/blue.git
+  REF 51a59a4630d1ad14152e08bc38eb9c137fedcedf
   HEAD_REF linux-port
-)
-
-vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
-    FEATURES
-      documentation BUILD_DOCUMENTATION
 )
 
 vcpkg_cmake_configure(
   SOURCE_PATH ${SOURCE_PATH}
   OPTIONS
-  ${FEATURE_OPTIONS}
   -DBUILD_TESTING=OFF
   -DVCPKG_USE_HOST_TOOLS=ON
   -DVCPKG_HOST_TRIPLET=${HOST_TRIPLET}
@@ -23,5 +17,9 @@ vcpkg_cmake_configure(
 vcpkg_cmake_install()
 
 vcpkg_cmake_config_fixup()
-vcpkg_copy_pdbs()
+set(BUILD_PATHS
+    "${CURRENT_PACKAGES_DIR}/bin/*.pyd"
+    "${CURRENT_PACKAGES_DIR}/debug/bin/*.pyd"
+)
+vcpkg_copy_pdbs(BUILD_PATHS ${BUILD_PATHS})
 ccp_externalize_apple_debuginfo()

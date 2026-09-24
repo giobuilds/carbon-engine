@@ -13,7 +13,11 @@ that this repo ignores.
 | `io` | carbon-io | ported, 937/937 |
 | `math` | carbon-math | ported, 90/90 |
 | `blueexposure` | carbon-blueexposure | ported, 1184/1184 |
-| `linux-overlay-ports/` | vcpkg overlay ports for the forks (and greenlet over HTTPS) | |
+| `exefile` | carbon-exefile (Python host executable) | ported, builds (no tests); Crashpad off |
+| `pdm` | carbon-pdm (platform detection) | ported, 4/4 |
+| `pdm-proto-wrapper` | carbon-pdmprotowrapper | ported, 4/4 |
+| `blue` | carbon-blue (engine kernel) | ported, 389/389 natively (6 sysinfo/locale tests need a real home directory, fonts and `fr_FR`, so fail in the container) |
+| `linux-overlay-ports/` | vcpkg overlay ports for the forks, greenlet over HTTPS, and openssl 1.1.1k with `openssl.pc` (curl needs it on Linux) | |
 | `linux-tools/` | `setup_component.sh`, `add_linux_presets.py`, container preset template | |
 
 ## Building

@@ -86,13 +86,17 @@ podman run --rm --userns=keep-id --security-opt label=disable -e HOME=/home/keep
 ```
 
 - Run core's `ctest` serially. The telemetry tests bind a Tracy port and fail under `-j`.
-- `scheduler` (247/247), `io` (936/937, one skipped by design), `math` (90/90) and `blueexposure` (154/154)
-  are also ported. Ported components live on
+- `scheduler` (247/247), `io` (936/937, one skipped by design), `math` (90/90), `blueexposure` (154/154),
+  `exefile` (builds; no tests), `pdm` (4/4), `pdm-proto-wrapper` (4/4) and `blue` (389/389 natively) are also
+  ported. Blue's Python tests run through exefile; six sysinfo/locale tests fail only inside the container
+  (root-owned `$HOME`, empty machine-id, no fonts, no `fr_FR` locale), so run blue's `ctest` on the host after
+  building in the container. Ported components live on
   a `linux-port` branch in each repo; overlay ports must be added for each so the next layer can consume it.
 - **Overlay ports** in `linux-overlay-ports/` (workspace root, not a git repo) replace registry ports that
   exclude Linux or fetch over SSH: `carbon-core` builds from the local core commit named in its portfile
   (update the `REF` whenever core's branch moves), `greenlet` uses HTTPS and adds Linux install/config
-  branches. Container presets pass the directory as `VCPKG_OVERLAY_PORTS`.
+  branches, `openssl` is the pinned 1.1.1k port plus an installed `openssl.pc` (curl only uses OpenSSL on Linux
+  and asks pkg-config for it). Container presets pass the directory as `VCPKG_OVERLAY_PORTS`.
 - The vendored `vcpkg-registry` submodules point at the local `vcpkg-registry` clone's `linux-port` branch,
   which fixes an upstream bug: the Linux `*-triplet.cmake` files include the carbon toolchain by bare name.
 - `linux-tools/setup_component.sh <dir>` does the whole component setup (branch, submodules, baseline, presets,

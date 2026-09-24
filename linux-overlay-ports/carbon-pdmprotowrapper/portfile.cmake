@@ -1,23 +1,16 @@
 vcpkg_from_git(
   OUT_SOURCE_PATH SOURCE_PATH
-  URL https://github.com/giobuilds/core.git
-  REF 69105470c037caf224731be7722c0b00fbae9c09
+  URL https://github.com/giobuilds/pdm-proto-wrapper.git
+  REF fa7d49975ad08d0fc6cc507fc9265fbb268e1e29
   HEAD_REF linux-port
-)
-
-vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
-    FEATURES
-      documentation BUILD_DOCUMENTATION
 )
 
 vcpkg_cmake_configure(
   SOURCE_PATH ${SOURCE_PATH}
   OPTIONS
-  ${FEATURE_OPTIONS}
   -DBUILD_TESTING=OFF
   -DVCPKG_USE_HOST_TOOLS=ON
   -DVCPKG_HOST_TRIPLET=${HOST_TRIPLET}
-  -DCMAKE_BUILD_TYPE=${CARBON_BUILD_TYPE}
 )
 
 vcpkg_cmake_install()

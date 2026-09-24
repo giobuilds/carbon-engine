@@ -1,0 +1,67 @@
+set(OSX_ADJUST_RPATH_MANUALLY FALSE)
+
+if(TARGET_TRIPLET MATCHES ".*universal-osx.*")
+    set(configuration_err_msg "VCPKG does not support adjusting the rpath of universal binary executables. You MUST set VCPKG_FIXUP_MACHO_RPATH to OFF in your triplet file.")
+    if(NOT DEFINED VCPKG_FIXUP_MACHO_RPATH)
+      message(FATAL_ERROR ${configuration_err_msg})
+    elseif(VCPKG_FIXUP_MACHO_RPATH)
+      message(FATAL_ERROR ${configuration_err_msg})
+    endif()
+    find_program(INSTALL_NAME_TOOL_COMMAND install_name_tool REQUIRED)
+    set(OSX_ADJUST_RPATH_MANUALLY TRUE)
+endif()
+
+vcpkg_from_git(
+  OUT_SOURCE_PATH SOURCE_PATH
+  URL https://github.com/giobuilds/exefile.git
+  REF 96fe96444f9d0c7e8709a815c36fa0f3f0e8586f
+  HEAD_REF linux-port
+)
+
+vcpkg_cmake_configure(
+  SOURCE_PATH ${SOURCE_PATH}
+  OPTIONS
+    -DCMAKE_BUILD_TYPE=${CARBON_BUILD_TYPE}
+)
+
+vcpkg_cmake_install()
+
+set(BUILD_PATHS
+        "${CURRENT_PACKAGES_DIR}/bin/*.exe"
+        "${CURRENT_PACKAGES_DIR}/debug/bin/*.exe"
+)
+vcpkg_copy_pdbs(BUILD_PATHS ${BUILD_PATHS})
+ccp_externalize_apple_debuginfo()
+
+set(EXEFILE_TOOL exefile)
+
+if (DEFINED CARBON_BUILD_TYPE AND NOT CARBON_BUILD_TYPE MATCHES "Release")
+  # The flavor postfix is lower-case (exefile_debug); only case-insensitive filesystems tolerated the mismatch.
+  string(TOLOWER "${CARBON_BUILD_TYPE}" EXEFILE_FLAVOR)
+  set(EXEFILE_TOOL ${EXEFILE_TOOL}_${EXEFILE_FLAVOR})
+endif()
+
+vcpkg_copy_tools(
+  TOOL_NAMES ${EXEFILE_TOOL}
+  AUTO_CLEAN
+)
+
+if (OSX_ADJUST_RPATH_MANUALLY)
+  # we must manually do here, what vcpkg fails to do it'self. VCPKG fails to adjust RPATHS correctly for universal executable files
+  # -add_rpath @loader_path/../../lib adds the VCPKG lib folder as an rpath
+  # -delete_rpath @executable_path/. removes the executable local directory
+  vcpkg_execute_required_process(
+    COMMAND ${INSTALL_NAME_TOOL_COMMAND} -delete_rpath "\@executable_path/." "${EXEFILE_TOOL}" 
+    WORKING_DIRECTORY "${CURRENT_PACKAGES_DIR}/tools/${PORT}"
+    LOGNAME "deleterpath"
+    SAVE_LOG_FILES
+  )
+  vcpkg_execute_required_process(
+    COMMAND ${INSTALL_NAME_TOOL_COMMAND} -add_rpath "\@loader_path/../../lib" "${EXEFILE_TOOL}"
+    WORKING_DIRECTORY "${CURRENT_PACKAGES_DIR}/tools/${PORT}"
+    LOGNAME "addrpath"
+    SAVE_LOG_FILES
+  )
+endif()
+
+vcpkg_copy_tool_dependencies("${CURRENT_PACKAGES_DIR}/tools/${PORT}")

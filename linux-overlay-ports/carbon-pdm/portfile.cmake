@@ -1,13 +1,8 @@
 vcpkg_from_git(
   OUT_SOURCE_PATH SOURCE_PATH
-  URL https://github.com/giobuilds/core.git
-  REF 69105470c037caf224731be7722c0b00fbae9c09
+  URL https://github.com/giobuilds/pdm.git
+  REF 1d068905e998ba96862a4f28d7d3f03f448edfbb
   HEAD_REF linux-port
-)
-
-vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
-    FEATURES
-      documentation BUILD_DOCUMENTATION
 )
 
 vcpkg_cmake_configure(
@@ -17,7 +12,6 @@ vcpkg_cmake_configure(
   -DBUILD_TESTING=OFF
   -DVCPKG_USE_HOST_TOOLS=ON
   -DVCPKG_HOST_TRIPLET=${HOST_TRIPLET}
-  -DCMAKE_BUILD_TYPE=${CARBON_BUILD_TYPE}
 )
 
 vcpkg_cmake_install()
