@@ -1,7 +1,7 @@
 # Vulkan backend for trinity on Linux: plan
 
-Status: planning, 2026-09-24. Trinity currently builds on Linux with the stub backend only
-(`giobuilds/trinity` `linux-port`, `linux-tools/trinity_smoke.sh`).
+Status (2026-09-24): **phase 0 done** (`giobuilds/trinity` `linux-port` 13dacfaf). Trinity builds on Linux with the stub
+backend and with a Vulkan skeleton (`BUILD_VULKAN=ON`); `linux-tools/trinity_smoke.sh [stub|vulkan]` checks both.
 
 ## Decisions
 
@@ -61,17 +61,47 @@ Status: planning, 2026-09-24. Trinity currently builds on Linux with the stub ba
 
 Each phase ends in a pushed, tested state on the `linux-port` branches.
 
-### Phase 0: Foundations
-- `TRINITY_VULKAN` platform id, `TRINITY_PLATFORM_NAME "vulkan"`, `TrinityAL_vulkan` and `trinity_vulkan` targets on
-  Linux; a `vulkan` vcpkg feature (vulkan-headers, volk, vulkan-memory-allocator, sdl3; spirv-reflect for the
-  shader compiler).
-- `TrinityALTest_vulkan` target and a Linux `RenderWindow`/window fixture for `trinityal/tests`; runs on RADV and on
-  lavapipe (`VK_ICD_FILENAMES=…/lvp_icd.x86_64.json`) inside the container.
-- Audit of the ~150 files outside `trinityal` that test `TRINITY_PLATFORM == TRINITY_DIRECTX12/METAL` or call
-  `*Dx12(`/`GetMetalContext` (~312 call sites): classify each as "needs a Vulkan branch", "DX-only feature",
-  or "fine". Output: a checklist in this document.
+### Phase 0: Foundations — done
+- `TRINITY_VULKAN` = 14, `TRINITY_PLATFORM_NAME "vulkan"`; `BUILD_VULKAN` on Linux enables the vcpkg `vulkan` feature
+  (volk, SDL3 with only `x11` + `wayland`, D-Bus without defaults, host `directx-dxc`). SDL3's default `ibus`
+  feature pulls D-Bus with systemd (libsystemd, libcap, libmount, libxcrypt) at this baseline; IME waits for "Later".
+- `TrinityAL_vulkan` (volk + VMA) and `_trinity_vulkan<flavor>.so` (SDL3). `trinityal/vulkan/` is the stub copied
+  under the `Vulkan` suffix, to be replaced class by class; it reports **no adapters** so GPU tests skip honestly.
+  Consequence: the Vulkan smoke test's `SetWindowState` fails with `E_INVALIDARG` until phase 2 enumerates devices.
+- `TriDeviceVulkan.cpp` (frame loop after Metal) fixes the only link-time gap.
+- `TrinityALTest_vulkan` on ctest: 241 tests, 96 pass (contract checks needing no GPU), 143 skip, 2 disabled.
+  Test shaders: `Shaders.DX12/*` (minus raytracing) compiled by dxc to SPIR-V.
+- Build image (`linux-tools/Containerfile.plus`) gained the Vulkan loader, Mesa drivers (lavapipe), vulkan-tools,
+  X11/Wayland/xkbcommon headers and libltdl-dev; `CARBON_GPU=1 linux-tools/incontainer.sh …` exposes the host GPU
+  (RADV) inside the container.
 
-Done when: the empty backend compiles and links, the test target runs (tests skip), the audit list exists.
+**Binding convention** (used by the test shaders now, by `EffectCompilerVulkan` in phase 1): descriptor set = D3D
+register space; binding = register index + 0 (`b`), 32 (`s`), 64 (`t`), 128 (`u`); dxc flags
+`-spirv -fspv-target-env=vulkan1.3 -fvk-use-dx-layout -fvk-{b,s,t,u}-shift`.
+
+#### Audit: backend-specific code in `trinity/trinity` (outside TrinityAL)
+No platform chain ends in `#error`/`static_assert`. Items, grouped by the phase that resolves them:
+
+- Resolved in phase 0: missing `TriDeviceVulkan.cpp` (link failure); no Vulkan build target; `IS_LOW_PERFORMACE`
+  copied as 1 from the stub (Python lowers quality when set).
+- Phase 1 (content): `Shader/Tr2Effect.cpp:326` resolves effects under `effect.vulkan/`, so every effect load fails
+  until the shader compiler produces that tree.
+- Phase 3 (window): `UI/Tr2MainWindow_Linux.cpp` is headless and `GetOutputWindow()` is null; the SDL3 window must
+  hand the backend a surface-capable handle (`Tr2WindowHandle` = `SDL_Window*`).
+- Phase 4 (engine), needs a Vulkan branch:
+  - GPU-driven indirect rendering: `Tr2RenderContext.cpp:619-770`, `Tr2IndirectDrawBuffer.{h,cpp}` (DX12/Metal
+    only; Vulkan silently falls back to `RenderSortedBatches`), `Shader/Tr2EffectDescription.h:210`
+    (`Tr2Pass::indirectLayout`), `Shader/Tr2Shader.cpp:243-275` (split: indirect layout vs raytracing flag).
+  - `Tr2ReflectionProbe.cpp:235-239`: query `VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT` for B10G11R11 and fall back to
+    RGBA16F like DX12 (the `#else` assumes Metal).
+  - `Tr2Renderer.cpp:1479-1509` `GetGeometryShaderSupport()`: report `VkPhysicalDeviceFeatures::geometryShader`.
+  - `Tr2RenderContext.cpp:412,489,735`: GPU regions via debug-utils labels (profiling only).
+  - `TriDevice_Blue.cpp:90-140` `GetVideoMemoryInfo`: optional, `VK_EXT_memory_budget`.
+- Latent, only if Vulkan enables parallel contexts: `Tr2PersistentPerObjectData.h:112` (`isPrimary` keyed on Metal).
+- Not needed on Vulkan (report unsupported): DX12 raytracing barriers in `Raytracing/Tr2RaytracingGeometry.cpp`,
+  DLSS/XeSS/MetalFX/Streamline, DRED, Metal counters, macOS driver workarounds, Rosetta overlay.
+- Note: `Tr2SSAO.cpp:202` keys a Metal workaround on `__APPLE__` rather than the backend (matters for MoltenVK only).
+- Python sees `platformName "vulkan"`, `platformID 14`; no script in these repos compares platform ids.
 
 ### Phase 1: Shader toolchain
 - Build `shadercompiler` on Linux (CMake Linux branch, `shader-compiler` vcpkg feature for Linux with
@@ -124,6 +154,8 @@ and survives resize, minimise and fullscreen toggles on X11 and Wayland.
 - FSR1 upscaling shaders as SPIR-V (`Fsr1Vk.h`), branch in `src/upscaling/Tr2Fsr1Upscaling.cpp`.
 - Render a scene (`EveSpaceScene` or a minimal scene) with your own compiled effects.
 - Rendering tests with reference screenshots generated on RADV.
+- Fix `CompareWithBitmap` in `trinityal/tests/WithValidRenderContextFixture.cpp`: it compares each pixel with
+  itself, so screenshot comparison can never fail today (left unchanged in phase 0 so existing results hold).
 
 Done when: a scene renders in a window through the engine's normal render path, and the Rendering test group passes
 with screenshot comparison.

@@ -10,11 +10,14 @@
 # - $HOME is a writable tmpfs (keep-id alone leaves it root-owned); the workspace and the vcpkg binary
 #   cache are bind-mounted inside it at their host paths, so absolute paths in build trees stay valid
 # - /etc/machine-id comes from the host (the image ships an empty one)
+# - CARBON_GPU=1 passes the host GPU (/dev/dri) through for Vulkan on RADV; without it only lavapipe is available
 set -euo pipefail
 WS=/home/keeper/Workspace/CARBON_Engine
 IMAGE=${CARBON_BUILD_IMAGE:-carbon-linux-gcc-buildenv:local-plus}
 dir=$1; shift
-exec podman run --rm --userns=keep-id --security-opt label=disable \
+gpu=()
+if [ "${CARBON_GPU:-0}" = 1 ]; then gpu=(--device /dev/dri --group-add keep-groups); fi
+exec podman run --rm --userns=keep-id --security-opt label=disable "${gpu[@]}" \
     -e HOME=/home/keeper \
     --mount type=tmpfs,destination=/home/keeper,chown=true \
     -v /etc/machine-id:/etc/machine-id:ro \

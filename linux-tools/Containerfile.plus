@@ -4,16 +4,23 @@
 #   podman build -t carbon-linux-gcc-buildenv:local-plus -f Containerfile.plus .
 #
 # - libtool/m4/gperf/bison/flex/texinfo/gettext/python3: autotools-based vcpkg ports (libffi, python3, ...)
+# - libltdl-dev: ltdl.m4 (LT_SYS_SYMBOL_USCORE), needed by libxcrypt, which SDL3 pulls in
 # - locales: blue's YAML tests switch to fr_FR to prove parsing ignores the user's locale
 # - fonts-dejavu-core: gives /usr/share/fonts, which blue.sysinfo reports as the shared fonts directory
 # - gdb: backtraces for crashes inside tests
+# - libvulkan1, mesa-vulkan-drivers, vulkan-tools: the Vulkan loader and Mesa's drivers, including lavapipe
+#   (software Vulkan) so the Vulkan backend's tests run without a GPU; vulkaninfo for checking the setup
+# - X11/Wayland/xkbcommon/EGL development headers: SDL3's x11 and wayland video drivers build against them
 FROM carbon-linux-gcc-buildenv:local
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install --no-install-recommends -yq \
-    libtool libtool-bin m4 gperf bison flex texinfo gettext python3 \
+    libtool libtool-bin libltdl-dev m4 gperf bison flex texinfo gettext python3 \
     locales fonts-dejavu-core gdb \
+    libvulkan1 mesa-vulkan-drivers vulkan-tools \
+    libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+    libxkbcommon-dev libwayland-dev wayland-protocols libegl-dev libdecor-0-dev \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Plain "fr_FR" is what the tests ask setlocale() for; glibc resolves it to the ISO-8859-1 definition.

@@ -86,6 +86,9 @@ linux-tools/incontainer.sh <component> \
 linux-tools/incontainer.sh <component>/.cmake-build-x64-linux-debug-container 'ctest -j8 --output-on-failure'
 ```
 
+- `CARBON_GPU=1 linux-tools/incontainer.sh …` passes the host GPU (`/dev/dri`, RADV) into the container; without it
+  Vulkan sees only lavapipe. Trinity's Vulkan skeleton builds with `BUILD_VULKAN=ON` (set in trinity's container
+  user preset); `linux-tools/trinity_smoke.sh vulkan` loads it.
 - Run core's `ctest` serially. The telemetry tests bind a Tracy port and fail under `-j`.
 - `scheduler` (247/247), `io` (936/937, one skipped by design), `math` (90/90), `blueexposure` (154/154),
   `exefile` (builds; no tests), `pdm` (4/4), `pdm-proto-wrapper` (4/4), `blue` (389/389), `destiny` (73/73 C++, 458/458

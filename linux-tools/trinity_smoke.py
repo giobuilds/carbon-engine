@@ -1,9 +1,13 @@
 import sys
 import blue_debug as blue  # flavored module name, as blue's own tests import it
 sys.modules["blue"] = blue
-import _trinity_stub_debug as trinity
+import importlib, os
+# TRINITY_PLATFORM selects the module: stub (default) or vulkan
+trinity = importlib.import_module(f"_trinity_{os.environ.get('TRINITY_PLATFORM', 'stub')}_debug")
 names = [n for n in dir(trinity) if not n.startswith('_')]
+info = trinity.Tr2PlatformInfo()
 print("trinity module:", trinity.__file__)
+print("platform:", info.platformName, "| id:", info.platformID, "| low performance:", info.isLowPerformance)
 print("exposed names:", len(names))
 created = []
 for cls in ("EveSpaceScene", "EveTransform", "Tr2Mesh", "Tr2Effect", "EveShip2", "Tr2MainWindow", "TriCurveSet"):
