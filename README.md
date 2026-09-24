@@ -23,6 +23,7 @@ that this repo ignores.
 | `mesh` | carbon-mesh | ported, cmftest 28/28 |
 | `trinity` | carbon-trinity (renderer) | stub backend builds; `linux-tools/trinity_smoke.sh` imports it in exefile, creates objects, a device and the headless window |
 | `linux-overlay-ports/` | vcpkg overlay ports for the forks, greenlet over HTTPS, and openssl 1.1.1k with `openssl.pc` (curl needs it on Linux) | |
+| `docs/` | `vulkan-backend-plan.md`: phased plan for a Vulkan backend (SDL3 windowing, DXC→SPIR-V shaders) | |
 | `linux-tools/` | `incontainer.sh` (run anything in the build container), `Containerfile.plus` (build image), `setup_component.sh`, `add_linux_presets.py`, container preset template | |
 
 ## Building

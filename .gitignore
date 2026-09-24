@@ -3,4 +3,5 @@
 /*/
 !/linux-overlay-ports/
 !/linux-tools/
+!/docs/
 __pycache__/
