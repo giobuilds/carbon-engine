@@ -224,6 +224,18 @@ How 2d binds things (details in `trinityal/vulkan/VulkanSpirv.h`):
 Done when: a Python script opens a window, clears and presents at vsync, receives keyboard/mouse/focus/close events,
 and survives resize, minimise and fullscreen toggles on X11 and Wayland.
 
+Progress:
+- 3a (`28512519`): swapchains and presentation. `Tr2WindowHandle` is the `SDL_Window*` (created with
+  `SDL_WINDOW_VULKAN`); SDL creates the surface, so TrinityAL_vulkan links SDL3 (the `sdl3` port needs its `vulkan`
+  feature; the resolved version is 3.2.16, not the 3.4.4 in the vendored ports tree). Present blits trinity's own back
+  buffer into the acquired image, so the default back buffer stays a stable, CPU-readable texture. Swapchains are
+  recreated on out-of-date/suboptimal and whenever the window's pixel size changes (X11 and headless surfaces do not
+  always report resizes). TrinityALTest 260/260 in the container, where SDL falls back to its offscreen driver
+  (`VK_EXT_headless_surface`), and the swapchain and full suites also pass on the GNOME Wayland desktop, natively and
+  through XWayland, on RADV and lavapipe (`CARBON_DISPLAY=1 linux-tools/incontainer.sh …` shares the host display).
+- Next: 3b `Tr2MainWindow_Linux` on SDL3 (window modes, events and input to Python), 3c displays/modes from SDL and
+  blue's clipboard/message box, 3d checks on the real desktop.
+
 ### Phase 4: Engine integration
 - Work through the phase 0 audit: Vulkan branches where the engine calls backend-specific paths.
 - FSR1 upscaling shaders as SPIR-V (`Fsr1Vk.h`), branch in `src/upscaling/Tr2Fsr1Upscaling.cpp`.
