@@ -1,6 +1,6 @@
 # Vulkan backend for trinity on Linux: plan
 
-Status (2026-09-25): **phases 0 and 1 done** (`giobuilds/trinity` `linux-port` 5f7d53b6). Trinity builds on Linux with the stub
+Status (2026-09-25): **phases 0 and 1 done, phase 2 through 2d** (`giobuilds/trinity` `linux-port` 5f7d53b6). Trinity builds on Linux with the stub
 backend and with a Vulkan skeleton (`BUILD_VULKAN=ON`); `linux-tools/trinity_smoke.sh [stub|vulkan]` checks both.
 
 ## Decisions
@@ -152,8 +152,40 @@ Progress (trinity `linux-port`):
   ConstantBuffer, Texture (plus 8 Vulkan-only data round-trip tests), TextureSubresource, RenderTarget and DepthStencil
   pass on RADV (RX 6600) and lavapipe with no validation messages. The full suite is 249/253 on both; the failures are
   Compute x3 (`RunComputeShader`, step 2d) and `SwapChain.CanCreateSwapChain` (needs a real window, Phase 3).
-- Next: 2d (shaders, programs, vertex layouts, resource sets, samplers, pipelines, dynamic rendering, draws, compute,
-  constant ring), then 2e (queries, timers, fences).
+- 2d (`f1dba106`): shaders, samplers, vertex layouts, programs, resource sets, graphics/compute pipelines,
+  dynamic rendering, draws (plain, instanced, indexed, UP, indirect), compute (and indirect), clears, UAV clears,
+  constants. **Full TrinityALTest suite 254/255 on RADV and lavapipe with zero validation messages**; the one failure is
+  `SwapChain.CanCreateSwapChain` (Phase 3). All 40 Rendering screenshots agree between RADV and lavapipe
+  (`linux-tools/compare_screenshots.py`; differences only on edges and compressed-texture filtering) and were checked by
+  eye (orientation, viewport origin, depth, blending, sRGB, mips, PS UAVs, missing vertex inputs).
+- Next: 2e (queries, timers, fences made real), then Phase 3.
+
+How 2d binds things (details in `trinityal/vulkan/VulkanSpirv.h`):
+- One descriptor set per draw, allocated from per-frame pools. At load every shader's SPIR-V is patched so that
+  set = 0 and binding = stage * 1024 + space * 256 + (register + class offset): D3D's per-stage register files stay
+  separate although Vulkan shares bindings across stages.
+- Descriptor types, image dimensions and vertex-input locations come from reflecting the SPIR-V (the signature cannot
+  tell `ByteAddressBuffer` from `Buffer<T>`); vertex inputs are matched to the layout by dxc's `in.var.<SEMANTIC>` names.
+  Inputs the layout lacks read a zero stream, as D3D's missing IA elements do.
+- Unbound slots are null descriptors (`VK_EXT_robustness2`); unbound samplers get a default sampler.
+- Constants are copied into a per-frame upload ring at draw time (once per buffer version per command buffer); UP
+  draws use the same ring.
+- Pipelines are cached per program, keyed by fixed-function state, vertex layout id and attachment formats; viewport,
+  scissor, stencil reference, blend constants and vertex strides are dynamic. The viewport is flipped (negative
+  height) so D3D clip space and clockwise front faces carry over.
+- A dynamic-rendering scope stays open across draws and closes (with a full barrier) when targets change, before any
+  transfer/dispatch/submit (device hook), and after a pass whose draws wrote UAVs when resources change.
+
+2d follow-ups:
+- Descriptor sets are rebuilt whenever the resource set, program or a constant buffer changes; a descriptor cache or
+  push descriptors would cut CPU cost. `VkPipelineCache` is not persisted yet.
+- Tessellation (no patch-list topology in trinity's enum), instance step rates above 1, bindless (unbounded arrays),
+  append/counter buffers and dual-source blending on RT>0 are not supported; each logs and fails cleanly.
+- GPU debug markers are no-ops (debug-utils labels across render-pass boundaries need care).
+- `WRITE_OFTEN` buffers still synchronize on map instead of renaming (DX12 renames).
+- The DX11 reference screenshots in `trinityal/tests/screenshots/dx11` are not in the format the harness writes: 24-bit
+  pixels after a 122-byte header whose fields do not decode, with file sizes that fit no single resolution. Only three
+  could be compared (all match); the rest are skipped by the script.
 
 2c follow-ups:
 - Every image lives in `VK_IMAGE_LAYOUT_GENERAL`, ordered by full barriers. Correct everywhere but costs compression
