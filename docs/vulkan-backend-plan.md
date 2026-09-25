@@ -145,6 +145,24 @@ Follow-ups found in phase 1:
 Done when: TrinityAL Buffer, ConstantBuffer, Texture, TextureSubresource, RenderTarget and Compute tests pass on RADV
 and lavapipe with validation layers clean.
 
+Progress (trinity `linux-port`):
+- 2a (`dee5b163`): instance, adapters, device, frame ring, deferred release.
+- 2b (`5ec06309`): buffers and constant buffers.
+- 2c (`26f63025`): textures, render targets, depth-stencil; buffer initial-data rule aligned with D3D12. Buffer,
+  ConstantBuffer, Texture (plus 8 Vulkan-only data round-trip tests), TextureSubresource, RenderTarget and DepthStencil
+  pass on RADV (RX 6600) and lavapipe with no validation messages. The full suite is 249/253 on both; the failures are
+  Compute x3 (`RunComputeShader`, step 2d) and `SwapChain.CanCreateSwapChain` (needs a real window, Phase 3).
+- Next: 2d (shaders, programs, vertex layouts, resource sets, samplers, pipelines, dynamic rendering, draws, compute,
+  constant ring), then 2e (queries, timers, fences).
+
+2c follow-ups:
+- Every image lives in `VK_IMAGE_LAYOUT_GENERAL`, ordered by full barriers. Correct everywhere but costs compression
+  (AMD DCC/HTILE) on render targets and depth. Replace with per-resource layout tracking once resource sets and render
+  passes exist (2d), keeping GENERAL only for UAVs.
+- Depth MSAA resolve returns E_FAIL (`vkCmdResolveImage` is colour-only); do it with a dynamic-rendering resolve in 2d.
+- Maps create a staging buffer per call; `READ_OFTEN`/`WRITE_OFTEN` textures should keep theirs, as DX12 does.
+- `MapForReading(synchronize=false)` submits but does not wait; it becomes meaningful once fences are real (2e).
+
 ### Phase 3: Window and presentation (SDL3)
 - `Tr2MainWindow_Linux.cpp` on SDL3: `SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY`, events drained in
   `OnTick`/`ProcessMessages`, `Tr2WindowHandle` = `SDL_Window*`.
