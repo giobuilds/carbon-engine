@@ -1,7 +1,7 @@
 vcpkg_from_git(
   OUT_SOURCE_PATH SOURCE_PATH
   URL https://github.com/giobuilds/blue.git
-  REF 175751b6baa26eca4e753c34db7cbc8c54afceab
+  REF b181d7aa4651f909790d58229a539b705aa53491
   HEAD_REF linux-port
 )
 

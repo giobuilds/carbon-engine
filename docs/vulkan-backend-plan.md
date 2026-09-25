@@ -1,6 +1,6 @@
 # Vulkan backend for trinity on Linux: plan
 
-Status (2026-09-25): **phases 0, 1 and 2 done** (`giobuilds/trinity` `linux-port` 5f7d53b6). Trinity builds on Linux with the stub
+Status (2026-09-25): **phases 0, 1 and 2 done, phase 3 through 3c** (`giobuilds/trinity` `linux-port` 5f7d53b6). Trinity builds on Linux with the stub
 backend and with a Vulkan skeleton (`BUILD_VULKAN=ON`); `linux-tools/trinity_smoke.sh [stub|vulkan]` checks both.
 
 ## Decisions
@@ -233,8 +233,26 @@ Progress:
   always report resizes). TrinityALTest 260/260 in the container, where SDL falls back to its offscreen driver
   (`VK_EXT_headless_surface`), and the swapchain and full suites also pass on the GNOME Wayland desktop, natively and
   through XWayland, on RADV and lavapipe (`CARBON_DISPLAY=1 linux-tools/incontainer.sh …` shares the host display).
-- Next: 3b `Tr2MainWindow_Linux` on SDL3 (window modes, events and input to Python), 3c displays/modes from SDL and
-  blue's clipboard/message box, 3d checks on the real desktop.
+- 3b/3c (`f10f9013`, blue `b181d7aa`): `Tr2MainWindow_SDL.cpp` (Vulkan build; the stub keeps the headless window).
+  `TrinityALImpl::InitializeWindowSystem` starts SDL video once (desktop, else the offscreen driver). Windowed, fixed
+  (borderless at the display's top left) and fullscreen (borderless desktop fullscreen, back buffer scaled by the
+  present blit); events on the engine tick: close via onClose, focus/occlusion throttling, resize/maximise/minimise/move
+  into SetState, mouse in back-buffer pixels with Windows' button numbers, wheel in 120 units, VK key codes (SDL
+  scancodes mapped by position, names from the current layout) with the repeat flag, text input as onChar. SDL colour
+  cursors; display and fullscreen modes from the primary SDL display. Blue's clipboard and message boxes go through
+  a new `BluePlatformServices` hook that trinity fills with SDL (blue itself stays free of SDL).
+  TrinityALTest 261/261 on both drivers, zero validation messages; `linux-tools/trinity_window_demo.sh` presents at
+  vsync (~60 fps) on GNOME Wayland and XWayland with focus, mouse and state events; the clipboard round-trips on
+  Wayland, X11 and headless.
+- Next: 3d, hands-on checks on the desktop (keyboard layouts and IME-less text input, resize/minimise/fullscreen
+  toggles, cursor clipping, HiDPI, multi-monitor), then Phase 4.
+
+Phase 3 notes:
+- Every adapter maps to the primary display; choosing the monitor per adapter index is open (Vulkan adapters are GPUs).
+- Wayland ignores window positions (the compositor places windows); `SetCursorPos` and cursor clipping depend on the
+  compositor's pointer-constraints support.
+- No IME composition yet (SDL3 text-editing events are not forwarded; plan's "Later").
+- Window icon not set yet.
 
 ### Phase 4: Engine integration
 - Work through the phase 0 audit: Vulkan branches where the engine calls backend-specific paths.
