@@ -1,6 +1,6 @@
 # Vulkan backend for trinity on Linux: plan
 
-Status (2026-09-25): **phases 0 and 1 done, phase 2 through 2d** (`giobuilds/trinity` `linux-port` 5f7d53b6). Trinity builds on Linux with the stub
+Status (2026-09-25): **phases 0, 1 and 2 done** (`giobuilds/trinity` `linux-port` 5f7d53b6). Trinity builds on Linux with the stub
 backend and with a Vulkan skeleton (`BUILD_VULKAN=ON`); `linux-tools/trinity_smoke.sh [stub|vulkan]` checks both.
 
 ## Decisions
@@ -158,7 +158,21 @@ Progress (trinity `linux-port`):
   `SwapChain.CanCreateSwapChain` (Phase 3). All 40 Rendering screenshots agree between RADV and lavapipe
   (`linux-tools/compare_screenshots.py`; differences only on edges and compressed-texture filtering) and were checked by
   eye (orientation, viewport origin, depth, blending, sRGB, mips, PS UAVs, missing vertex inputs).
-- Next: 2e (queries, timers, fences made real), then Phase 3.
+- 2e (`53044d26`): fences, GPU timers, occlusion and pipeline-statistics queries, GPU-accurate rendered frame
+  numbers. Every submission has a serial; fences and query results complete when their serial's fence has signalled.
+  Full suite **259/260 on RADV and lavapipe, zero validation messages** (only `SwapChain.CanCreateSwapChain`, Phase 3).
+  New Vulkan-only tests check values: an exact occlusion sample count, pipeline statistics of a known draw, a measured
+  time, fence and rendered-frame progress.
+- **Phase 2 is done.** Next: Phase 3 (SDL3 window, swapchain, presentation).
+
+2e notes:
+- Occlusion and statistics queries begin and end outside render passes (a query begun inside one must end in the same
+  pass, which trinity's Begin/End do not guarantee), so each Begin/End closes the open pass with a barrier. A submit
+  between Begin and End (e.g. a synchronous readback) drops the query with an error.
+- Timers write timestamps in place and reset from the host, which is safe because Begin only succeeds after the
+  previous interval was read (DX12's rule).
+- Driver differences seen: lavapipe (Mesa 26.0) counts no occlusion samples without a depth attachment (RADV does, as
+  the spec says); RADV counts fragment-shader invocations per 2x2 quad.
 
 How 2d binds things (details in `trinityal/vulkan/VulkanSpirv.h`):
 - One descriptor set per draw, allocated from per-frame pools. At load every shader's SPIR-V is patched so that
